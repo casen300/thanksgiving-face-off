@@ -1,0 +1,449 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thanksgiving Face-Off</title>
+<style>
+:root {
+  --navy:#14283c;
+  --blue:#24445e;
+  --orange:#bd6536;
+  --gold:#efc46b;
+  --cream:#fff5df;
+  --red:#b83d35;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  min-height:100vh;
+  color:var(--cream);
+  font-family:Arial,sans-serif;
+  background:radial-gradient(circle at top,#35536a,#101d2b 75%);
+}
+button,input {
+  font:inherit;
+}
+button {
+  border:0;
+  border-radius:10px;
+  padding:13px 18px;
+  background:var(--gold);
+  color:#17283a;
+  font-weight:bold;
+  cursor:pointer;
+  transition:.2s;
+}
+button:hover { transform:translateY(-2px); filter:brightness(1.1); }
+button:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+.container { max-width:1050px; margin:auto; padding:20px; }
+.panel {
+  background:#172e43;
+  border:1px solid #60768a;
+  border-radius:20px;
+  padding:24px;
+  box-shadow:0 15px 40px #0005;
+}
+h1 {
+  color:var(--gold);
+  text-align:center;
+  font-size:clamp(2.5rem,8vw,5rem);
+  line-height:1;
+}
+h2 { text-align:center; }
+.subtitle { text-align:center; color:#e4d6bd; }
+.hidden { display:none!important; }
+input {
+  padding:12px;
+  border-radius:9px;
+  border:1px solid #aaa;
+  min-width:180px;
+}
+.row {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:center;
+  gap:12px;
+  margin:16px 0;
+}
+.teams {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.team {
+  background:var(--blue);
+  padding:15px;
+  text-align:center;
+  border-radius:14px;
+  border:2px solid transparent;
+}
+.team.active {
+  border-color:var(--gold);
+  box-shadow:0 0 18px #efc46b66;
+}
+.score {
+  font-size:2.3rem;
+  color:var(--gold);
+  font-weight:bold;
+}
+.stats {
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:12px;
+  margin:18px 0;
+}
+.stat {
+  background:#0e1d2a;
+  padding:12px 20px;
+  border-radius:10px;
+  text-align:center;
+}
+.stat strong {
+  display:block;
+  color:var(--gold);
+  font-size:1.5rem;
+}
+.board {
+  display:grid;
+  gap:9px;
+  max-width:750px;
+  margin:20px auto;
+}
+.answer {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  min-height:58px;
+  background:linear-gradient(90deg,#284b68,#1a354d);
+  border:2px solid var(--orange);
+  border-radius:11px;
+  padding:12px 16px;
+  color:white;
+  font-size:1.15rem;
+  text-align:left;
+}
+.answer .points { color:var(--gold); }
+.answer.hidden-answer {
+  justify-content:center;
+  background:linear-gradient(90deg,#a34f2c,#d07b3c);
+  color:white;
+}
+.answer.revealed { cursor:default; }
+.strikes {
+  min-height:55px;
+  text-align:center;
+  font-size:2.5rem;
+  color:#ff6258;
+  font-weight:bold;
+}
+.notice {
+  text-align:center;
+  color:var(--gold);
+  min-height:28px;
+  font-weight:bold;
+  margin:12px;
+}
+.toolbar {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  margin:14px 0;
+}
+.red { background:var(--red); color:white; }
+.green { background:#70ae83; }
+.gray { background:#d5dce1; }
+.small { font-size:.85rem; color:#c5d0d9; }
+.trophy { font-size:5rem; text-align:center; }
+@media(max-width:600px) {
+  .teams { grid-template-columns:1fr; }
+  .container { padding:10px; }
+  .panel { padding:15px; }
+  .answer { font-size:1rem; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<section id="home" class="panel">
+  <p class="subtitle">A THANKSGIVING GAME SHOW</p>
+  <h1>THANKSGIVING<br>FACE-OFF</h1>
+  <p class="subtitle">TWO TEAMS. ONE SURVEY. ONE WINNER.</p>
+  <div class="row">
+    <input id="teamInput0" value="Turkey Troopers" placeholder="Team 1 name">
+    <input id="teamInput1" value="Gravy Gang" placeholder="Team 2 name">
+  </div>
+  <div class="row">
+    <button onclick="startGame()">START GAME</button>
+    <button class="gray" onclick="showInstructions()">HOW TO PLAY</button>
+  </div>
+  <div id="instructions" class="hidden">
+    <h2>HOW TO PLAY</h2>
+    <p>1. Two teams compete to reveal the most popular answers.</p>
+    <p>2. Choose the face-off winner to give a team control.</p>
+    <p>3. Each revealed answer adds points to the round bank.</p>
+    <p>4. Three strikes give the other team a chance to steal.</p>
+    <p>5. The team with the highest score after 15 rounds wins!</p>
+  </div>
+  <p class="subtitle small">Original family game • No account needed to play</p>
+</section>
+
+<section id="game" class="hidden">
+  <div class="panel">
+    <div class="row">
+      <strong id="roundLabel">ROUND 1</strong>
+    </div>
+    <h2 id="question"></h2>
+
+    <div class="teams">
+      <div class="team" id="team0">
+        <div id="name0"></div>
+        <div class="score" id="score0">0</div>
+        POINTS
+      </div>
+      <div class="team" id="team1">
+        <div id="name1"></div>
+        <div class="score" id="score1">0</div>
+        POINTS
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">ROUND BANK<strong id="bank">0</strong></div>
+      <div class="stat">STRIKES<strong id="strikeNumber">0 / 3</strong></div>
+      <div class="stat">CONTROL<strong id="controlName">Face-off</strong></div>
+    </div>
+
+    <div class="strikes" id="strikeMarks"></div>
+    <div class="board" id="board"></div>
+    <div class="notice" id="notice">Choose the face-off winner to begin!</div>
+
+    <div class="toolbar" id="faceoffControls">
+      <button onclick="chooseControl(0)">Team 1 wins face-off</button>
+      <button onclick="chooseControl(1)">Team 2 wins face-off</button>
+    </div>
+
+    <div class="toolbar hidden" id="hostControls">
+      <button class="red" onclick="addStrike()">ADD STRIKE X</button>
+      <button class="green" onclick="successfulSteal()">STEAL SUCCESSFUL</button>
+      <button class="gray" onclick="failedSteal()">STEAL FAILED</button>
+      <button class="gray" onclick="endRound()">END ROUND</button>
+    </div>
+
+    <div class="toolbar">
+      <button class="gray" onclick="toggleKey()">SHOW ANSWER KEY</button>
+      <button class="gray" onclick="toggleSound()" id="soundButton">SOUND: ON</button>
+      <button class="gray" onclick="printSheet()">PRINT SCORE SHEET</button>
+    </div>
+
+    <div class="toolbar">
+      <button id="nextButton" onclick="nextRound()" disabled>NEXT ROUND</button>
+    </div>
+  </div>
+</section>
+
+<section id="finish" class="panel hidden">
+  <p class="subtitle">THE CHAMPIONSHIP</p>
+  <div class="trophy">🏆</div>
+  <h1 id="winner"></h1>
+  <h2>FINAL SCORES</h2>
+  <div class="teams">
+    <div class="team"><h2 id="finalName0"></h2><div class="score" id="finalScore0"></div></div>
+    <div class="team"><h2 id="finalName1"></h2><div class="score" id="finalScore1"></div></div>
+  </div>
+  <div class="row"><button onclick="location.reload()">PLAY AGAIN</button></div>
+</section>
+
+</div>
+
+<script>
+const rounds = [
+["Name a food people commonly eat on Thanksgiving.",[["Turkey",30],["Mashed potatoes",25],["Stuffing or dressing",20],["Pie",15],["Gravy",10]]],
+["Name a side dish people hope to see on the Thanksgiving table.",[["Macaroni and cheese",28],["Dinner rolls",24],["Green bean casserole",20],["Sweet potatoes or yams",16],["Cranberry sauce",12]]],
+["Name a dessert people might serve at Thanksgiving.",[["Pumpkin pie",35],["Pecan pie",24],["Apple pie",19],["Cheesecake",12],["Cookies",10]]],
+["Name something people do after Thanksgiving dinner.",[["Watch football",28],["Watch a movie or TV",25],["Visit or talk with family",20],["Play games",16],["Take a nap",11]]],
+["Name something a person might do to get ready for Thanksgiving dinner.",[["Cook or bake",32],["Clean the house",24],["Set the table",18],["Go grocery shopping",15],["Decorate",11]]],
+["Name someone who might come to a Thanksgiving gathering.",[["Grandparents",30],["Aunts and uncles",25],["Cousins",22],["Friends",13],["Neighbors",10]]],
+["Name a food people might eat as a Thanksgiving leftover.",[["Turkey sandwich",30],["Mashed potatoes",23],["Stuffing",19],["Pie",16],["Turkey soup",12]]],
+["Name a tradition families might have on Thanksgiving.",[["Say what they are thankful for",28],["Eat a big meal",26],["Watch a parade",19],["Watch football",16],["Take a family photo",11]]],
+["Name something people might buy for Thanksgiving.",[["Turkey",30],["Potatoes",22],["Dessert or pie",19],["Stuffing ingredients",16],["Decorations",13]]],
+["Name something you might find on a Thanksgiving dinner table.",[["Turkey",28],["Gravy",24],["Mashed potatoes",20],["Dinner rolls",16],["Cranberry sauce",12]]],
+["Name something people often say they are thankful for.",[["Family",38],["Friends",24],["Health",17],["Home",12],["Pets",9]]],
+["Name a way people might travel to Thanksgiving dinner.",[["Car",55],["Airplane",20],["Train",10],["Bus",8],["Walk",7]]],
+["Name something that can take a long time to prepare for Thanksgiving.",[["Turkey",32],["Stuffing",22],["Pies or desserts",19],["Mashed potatoes",15],["Multiple side dishes",12]]],
+["Name something people might watch on Thanksgiving.",[["Football",35],["Thanksgiving parade",30],["Movies",18],["TV shows",10],["Dog show",7]]],
+["Name something people might do after everyone finishes Thanksgiving dinner.",[["Wash dishes",34],["Put away leftovers",28],["Wipe the table",16],["Pack food for guests",12],["Take out trash",10]]]
+];
+
+let names=["Team 1","Team 2"];
+let scores=[0,0], round=0, control=null, bank=0, strikes=0;
+let revealed=[], ended=false, answerKey=false, soundOn=true;
+
+function startGame(){
+ names=[
+  document.getElementById("teamInput0").value.trim()||"Team 1",
+  document.getElementById("teamInput1").value.trim()||"Team 2"
+ ];
+ document.getElementById("home").classList.add("hidden");
+ document.getElementById("game").classList.remove("hidden");
+ beginRound();
+}
+function showInstructions(){
+ document.getElementById("instructions").classList.toggle("hidden");
+}
+function beginRound(){
+ control=null; bank=0; strikes=0; revealed=[]; ended=false; answerKey=false;
+ document.getElementById("roundLabel").textContent="ROUND "+(round+1)+" OF 15";
+ document.getElementById("question").textContent=rounds[round][0];
+ document.getElementById("faceoffControls").classList.remove("hidden");
+ document.getElementById("hostControls").classList.add("hidden");
+ document.getElementById("nextButton").disabled=true;
+ document.getElementById("notice").textContent="Choose the face-off winner to begin!";
+ render();
+}
+function render(){
+ for(let i=0;i<2;i++){
+  document.getElementById("name"+i).textContent=names[i];
+  document.getElementById("score"+i).textContent=scores[i];
+  document.getElementById("team"+i).classList.toggle("active",control===i);
+ }
+ document.getElementById("bank").textContent=bank;
+ document.getElementById("strikeNumber").textContent=strikes+" / 3";
+ document.getElementById("strikeMarks").textContent="X ".repeat(strikes);
+ document.getElementById("controlName").textContent=control===null?"Face-off":names[control];
+ let board=document.getElementById("board");
+ board.innerHTML="";
+ rounds[round][1].forEach((answer,i)=>{
+  let button=document.createElement("button");
+  button.className="answer";
+  if(revealed.includes(i)||answerKey){
+   button.innerHTML=`<span>${i+1}. ${answer[0]}</span><span class="points">${answer[1]} points</span>`;
+   button.classList.add("revealed");
+  } else {
+   button.innerHTML=`<span>${i+1}</span><span>CLICK TO REVEAL</span><span>?</span>`;
+   button.classList.add("hidden-answer");
+  }
+  button.disabled=ended||revealed.includes(i);
+  button.onclick=()=>revealAnswer(i);
+  board.appendChild(button);
+ });
+}
+function chooseControl(team){
+ if(ended)return;
+ control=team;
+ document.getElementById("faceoffControls").classList.add("hidden");
+ document.getElementById("hostControls").classList.remove("hidden");
+ document.getElementById("notice").textContent=names[team]+" has control!";
+ sound(650,180);
+ render();
+}
+function revealAnswer(i){
+ if(control===null||ended||revealed.includes(i))return;
+ revealed.push(i);
+ let answer=rounds[round][1][i];
+ bank+=answer[1];
+ document.getElementById("notice").textContent="Correct! "+answer[0]+" adds "+answer[1]+" points!";
+ sound(600,180);
+ if(revealed.length===rounds[round][1].length) finishRound(control);
+ render();
+}
+function addStrike(){
+ if(ended||control===null||strikes>=3)return;
+ strikes++;
+ document.getElementById("notice").textContent=strikes===3?"THREE STRIKES! The other team can steal!":"Strike!";
+ sound(180,350);
+ render();
+}
+function successfulSteal(){
+ if(ended||strikes<3)return;
+ let other=1-control;
+ scores[other]+=bank;
+ document.getElementById("notice").textContent=names[other]+" stole the bank!";
+ bank=0;
+ finishRound(other);
+}
+function failedSteal(){
+ if(ended||strikes<3)return;
+ document.getElementById("notice").textContent="The steal failed!";
+ finishRound(control);
+}
+function finishRound(winner){
+ if(ended)return;
+ ended=true;
+ scores[winner]+=bank;
+ bank=0;
+ document.getElementById("notice").textContent=names[winner]+" wins the round!";
+ document.getElementById("hostControls").classList.add("hidden");
+ document.getElementById("faceoffControls").classList.add("hidden");
+ document.getElementById("nextButton").disabled=false;
+ sound(750,250);
+ render();
+}
+function endRound(){
+ if(control===null||ended)return;
+ finishRound(control);
+}
+function nextRound(){
+ if(!ended)return;
+ round++;
+ if(round>=rounds.length){showFinal();return;}
+ beginRound();
+}
+function showFinal(){
+ document.getElementById("game").classList.add("hidden");
+ document.getElementById("finish").classList.remove("hidden");
+ for(let i=0;i<2;i++){
+  document.getElementById("finalName"+i).textContent=names[i];
+  document.getElementById("finalScore"+i).textContent=scores[i];
+ }
+ document.getElementById("winner").textContent=
+  scores[0]===scores[1]?"IT'S A TIE!":names[scores[0]>scores[1]?0:1]+" WIN!";
+}
+function toggleKey(){
+ answerKey=!answerKey;
+ document.querySelector('[onclick="toggleKey()"]').textContent=
+ answerKey?"HIDE ANSWER KEY":"SHOW ANSWER KEY";
+ render();
+}
+function toggleSound(){
+ soundOn=!soundOn;
+ document.getElementById("soundButton").textContent="SOUND: "+(soundOn?"ON":"OFF");
+}
+function sound(freq,duration){
+ if(!soundOn)return;
+ try{
+  let context=new(window.AudioContext||window.webkitAudioContext)();
+  let oscillator=context.createOscillator();
+  let gain=context.createGain();
+  oscillator.frequency.value=freq;
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  gain.gain.setValueAtTime(.08,context.currentTime);
+  gain.gain.exponentialRampToValueAtTime(.001,context.currentTime+duration/1000);
+  oscillator.start();
+  oscillator.stop(context.currentTime+duration/1000);
+ }catch(e){}
+}
+function printSheet(){
+ let w=window.open("","_blank");
+ let rows="";
+ for(let i=1;i<=15;i++)rows+=`<tr><td>${i}</td><td></td><td></td><td></td><td></td></tr>`;
+ w.document.write(`<html><head><title>Thanksgiving Score Sheet</title><style>
+ body{font-family:Arial;padding:25px;color:#222}
+ h1{text-align:center}table{width:100%;border-collapse:collapse}
+ td,th{border:1px solid #555;padding:12px;text-align:center}
+ </style></head><body><h1>Thanksgiving Face-Off Score Sheet</h1>
+ <p>Team 1: ${names[0]}　 Team 2: ${names[1]}</p>
+ <table><tr><th>Round</th><th>Winning Team</th><th>Round Points</th><th>Team 1 Total</th><th>Team 2 Total</th></tr>${rows}</table>
+ <h3>Final winner: __________________________</h3></body></html>`);
+ w.document.close();w.print();
+}
+</script>
+</body>
+</html>
